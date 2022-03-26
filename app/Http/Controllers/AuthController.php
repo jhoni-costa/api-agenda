@@ -13,7 +13,7 @@ class AuthController extends Controller {
      * @info Cria uma nova instancia da classe
      * @return void
      */
-    public function __construct(){
+    public function __construct() {
         $this->middleware('auth:api', ['except' => ['login', 'register']]);
     }
 
@@ -22,29 +22,32 @@ class AuthController extends Controller {
      * @return Http\JsonResponse
      */
     public function login(Request $request){
-        $validator = Validador::make($request->all(),[
+    	$validator = Validator::make($request->all(), [
             'email' => 'required|email',
-            'password' => 'required|string|min:6'
+            'password' => 'required|string|min:6',
         ]);
-
+        
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-
-        if(! $token = auth()->attempt($validator->validated())){
-            return response()->json(['error' => 'Não autorizado'], 401);
+        
+        if (! $token = auth()->attempt($validator->validated())) {
+            return response()->json(['error' => 'Unauthorized'], 401);
         }
+        
+        return $this->createNewToken($token);
+
     }
 
     /**
      * @info Registra um usuário
      * @return Http\JsonResponse
      */
-    public function register(Request $request){
-        $validator = Validator::make($require->all(),[
-           'name'  => 'required|string|between:2,100',
-           'email' => 'required|string|email|max:100|unique:users',
-           'password' => 'required|string|confirmed|min:6',
+     public function register(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|between:2,100',
+            'email' => 'required|string|email|max:100|unique:users',
+            'password' => 'required|string|confirmed|min:6',
         ]);
         if($validator->fails()){
             return response()->json($validator->errors()->toJson(), 400);
@@ -54,7 +57,7 @@ class AuthController extends Controller {
                     ['password' => bcrypt($request->password)]
                 ));
         return response()->json([
-            'message' => 'Usuário logado com sucesso!',
+            'message' => 'Usuário cadastrado com sucesso!',
             'user' => $user
         ], 201);
     }
@@ -89,7 +92,7 @@ class AuthController extends Controller {
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60,
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
             'user' => auth()->user()
         ]);
     }
